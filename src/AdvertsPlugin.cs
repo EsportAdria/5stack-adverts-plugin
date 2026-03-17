@@ -40,7 +40,12 @@ public class AdvertsPlugin : BasePlugin
             _sequentialIndexes.Clear();
         }
 
-        Core.Configuration.InitializeJsonWithModel<AdvertsConfig>("config.jsonc", "Main");
+        Core.Configuration
+            .InitializeJsonWithModel<AdvertsConfig>("config.jsonc", "Main")
+            .Configure(builder =>
+            {
+                builder.AddJsonFile("config.jsonc", optional: false, reloadOnChange: false);
+            });
         LoadConfig();
 
         Core.Registrator.Register(this);
