@@ -12,7 +12,7 @@ using SwiftlyS2.Adverts.Models;
 
 namespace SwiftlyS2.Adverts;
 
-[PluginMetadata(Id = "swiftlys2_adverts", Version = "1.0.0", Name = "Adverts", Author = "EsportAdria")]
+[PluginMetadata(Id = "EA_Adverts", Version = "1.0.0", Name = "Adverts", Author = "EsportAdria")]
 public class AdvertsPlugin : BasePlugin
 {
 

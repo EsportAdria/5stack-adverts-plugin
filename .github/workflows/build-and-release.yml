@@ -33,10 +33,10 @@ jobs:
       - name: Create release archive
         run: |
           cd publish
-          zip -r ../swiftlys2-adverts-${{ github.ref_name }}.zip .
+          zip -r ../EA_Adverts-${{ github.ref_name }}.zip .
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: swiftlys2-adverts-${{ github.ref_name }}.zip
+          files: EA_Adverts-${{ github.ref_name }}.zip
           generate_release_notes: true

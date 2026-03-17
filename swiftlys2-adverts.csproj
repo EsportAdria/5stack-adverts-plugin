@@ -4,7 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>SwiftlyS2.Adverts</RootNamespace>
-    <AssemblyName>swiftlys2-adverts</AssemblyName>
+    <AssemblyName>EA_Adverts</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
