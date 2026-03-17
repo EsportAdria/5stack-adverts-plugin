@@ -672,7 +672,8 @@ Add to `AdvertsPlugin.cs` before the closing brace:
             _config.Prefix,
             _config.PrefixColor,
             group.DisplayType,
-            Core);
+            Core,
+            _currentMap);
 
         if (!context.IsSentByPlayer)
         {
