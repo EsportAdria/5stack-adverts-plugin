@@ -1,4 +1,5 @@
 using System.Threading;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.Plugins;
@@ -22,7 +23,7 @@ public class AdvertsPlugin : BasePlugin
     private AdvertsConfig _config = new();
     private readonly Random _random = new();
     private string _currentMap = "Unknown";
-    private Action<IOnMapLoadEvent>? _onMapLoadHandler;
+    private EventDelegates.OnMapLoad? _onMapLoadHandler;
 
     public AdvertsPlugin(ISwiftlyCore core) : base(core) { }
 
@@ -69,7 +70,7 @@ public class AdvertsPlugin : BasePlugin
 
     private void LoadConfig()
     {
-        _config = Core.Configuration.Get<AdvertsConfig>("Main") ?? new AdvertsConfig();
+        _config = Core.Configuration.Manager.GetSection("Main").Get<AdvertsConfig>() ?? new AdvertsConfig();
     }
 
     private bool IsGroupValid(string groupName, AdvertGroup group)
@@ -224,8 +225,8 @@ public class AdvertsPlugin : BasePlugin
     [Command("adverts_toggle", permission: "admins.adverts.toggle")]
     public void OnToggleCommand(ICommandContext context)
     {
-        var args = context.GetArgs();
-        if (args.Count < 1)
+        var args = context.Args;
+        if (args.Length < 1)
         {
             context.Reply("[Adverts] Usage: sw_adverts_toggle <group>");
             return;
@@ -260,8 +261,8 @@ public class AdvertsPlugin : BasePlugin
     [Command("adverts_preview", permission: "admins.adverts.preview")]
     public void OnPreviewCommand(ICommandContext context)
     {
-        var args = context.GetArgs();
-        if (args.Count < 1)
+        var args = context.Args;
+        if (args.Length < 1)
         {
             context.Reply("[Adverts] Usage: sw_adverts_preview <group> [index]");
             return;
@@ -281,7 +282,7 @@ public class AdvertsPlugin : BasePlugin
         }
 
         int index;
-        if (args.Count >= 2 && int.TryParse(args[1], out var parsed))
+        if (args.Length >= 2 && int.TryParse(args[1], out var parsed))
         {
             index = Math.Clamp(parsed, 0, group.Messages.Count - 1);
         }
