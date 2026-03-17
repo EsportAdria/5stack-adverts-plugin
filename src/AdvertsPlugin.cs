@@ -48,6 +48,48 @@ public class AdvertsPlugin : BasePlugin
         _config = Core.Configuration.Get<AdvertsConfig>("Main") ?? new AdvertsConfig();
     }
 
+    private bool IsGroupValid(string groupName, AdvertGroup group)
+    {
+        if (group.Messages.Count == 0)
+        {
+            Core.Logger.Warning($"[Adverts] Group '{groupName}' has no messages, skipping.");
+            return false;
+        }
+
+        if (group.IntervalSeconds <= 0)
+        {
+            Core.Logger.Warning($"[Adverts] Group '{groupName}' has invalid interval ({group.IntervalSeconds}s), skipping.");
+            return false;
+        }
+
+        if (!ValidDisplayTypes.Contains(group.DisplayType.ToLowerInvariant()))
+        {
+            Core.Logger.Warning($"[Adverts] Group '{groupName}' has unknown display type '{group.DisplayType}', skipping.");
+            return false;
+        }
+
+        if (!PlayerFilter.IsValidTarget(group.Target))
+        {
+            Core.Logger.Warning($"[Adverts] Group '{groupName}' has unknown target '{group.Target}', defaulting to 'all'.");
+        }
+
+        return true;
+    }
+
+    private void StartGroupTimer(string groupName, AdvertGroup group)
+    {
+        if (!_sequentialIndexes.ContainsKey(groupName))
+            _sequentialIndexes[groupName] = 0;
+
+        var token = Core.Scheduler.DelayAndRepeatBySeconds(
+            group.IntervalSeconds,
+            group.IntervalSeconds,
+            () => OnTimerTick(groupName, group));
+
+        Core.Scheduler.StopOnMapChange(token);
+        _timers[groupName] = token;
+    }
+
     private void StartAllTimers()
     {
         foreach (var (groupName, group) in _config.Groups)
@@ -55,39 +97,10 @@ public class AdvertsPlugin : BasePlugin
             if (!group.Enabled)
                 continue;
 
-            if (group.Messages.Count == 0)
-            {
-                Core.Logger.Warning($"[Adverts] Group '{groupName}' has no messages, skipping.");
+            if (!IsGroupValid(groupName, group))
                 continue;
-            }
 
-            if (group.IntervalSeconds <= 0)
-            {
-                Core.Logger.Warning($"[Adverts] Group '{groupName}' has invalid interval ({group.IntervalSeconds}s), skipping.");
-                continue;
-            }
-
-            if (!ValidDisplayTypes.Contains(group.DisplayType.ToLowerInvariant()))
-            {
-                Core.Logger.Warning($"[Adverts] Group '{groupName}' has unknown display type '{group.DisplayType}', skipping.");
-                continue;
-            }
-
-            if (!PlayerFilter.IsValidTarget(group.Target))
-            {
-                Core.Logger.Warning($"[Adverts] Group '{groupName}' has unknown target '{group.Target}', defaulting to 'all'.");
-            }
-
-            if (!_sequentialIndexes.ContainsKey(groupName))
-                _sequentialIndexes[groupName] = 0;
-
-            var token = Core.Scheduler.DelayAndRepeatBySeconds(
-                group.IntervalSeconds,
-                group.IntervalSeconds,
-                () => OnTimerTick(groupName, group));
-
-            Core.Scheduler.StopOnMapChange(token);
-            _timers[groupName] = token;
+            StartGroupTimer(groupName, group);
         }
     }
 
@@ -103,7 +116,7 @@ public class AdvertsPlugin : BasePlugin
     private void OnTimerTick(string groupName, AdvertGroup group)
     {
         string messageTemplate;
-        if (group.Order == "random")
+        if (group.Order.Equals("random", StringComparison.OrdinalIgnoreCase))
         {
             messageTemplate = group.Messages[_random.Next(group.Messages.Count)];
         }
@@ -209,18 +222,13 @@ public class AdvertsPlugin : BasePlugin
         }
         else
         {
-            if (group.Messages.Count == 0)
+            if (!IsGroupValid(groupName, group))
             {
-                context.Reply($"[Adverts] Group '{groupName}' has no messages.");
+                context.Reply($"[Adverts] Group '{groupName}' has invalid configuration.");
                 return;
             }
 
-            var newToken = Core.Scheduler.DelayAndRepeatBySeconds(
-                group.IntervalSeconds,
-                group.IntervalSeconds,
-                () => OnTimerTick(groupName, group));
-            Core.Scheduler.StopOnMapChange(newToken);
-            _timers[groupName] = newToken;
+            StartGroupTimer(groupName, group);
             context.Reply($"[Adverts] Group '{groupName}' enabled.");
         }
     }
