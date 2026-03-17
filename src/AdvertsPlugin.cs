@@ -18,6 +18,7 @@ public class AdvertsPlugin : BasePlugin
     private AdvertsConfig _config = new();
     private readonly Random _random = new();
     private string _currentMap = "Unknown";
+    private Action<IOnMapLoadEvent>? _onMapLoadHandler;
 
     public AdvertsPlugin(ISwiftlyCore core) : base(core) { }
 
@@ -25,6 +26,11 @@ public class AdvertsPlugin : BasePlugin
     {
         if (hotReload)
         {
+            if (_onMapLoadHandler != null)
+            {
+                Core.Event.OnMapLoad -= _onMapLoadHandler;
+                _onMapLoadHandler = null;
+            }
             StopAllTimers();
             _sequentialIndexes.Clear();
         }
@@ -35,10 +41,24 @@ public class AdvertsPlugin : BasePlugin
         Core.Registrator.Register(this);
 
         StartAllTimers();
+
+        _onMapLoadHandler = (e) =>
+        {
+            _currentMap = e.MapName; // cache map name for MessageFormatter
+            StopAllTimers();
+            _sequentialIndexes.Clear();
+            StartAllTimers();
+        };
+        Core.Event.OnMapLoad += _onMapLoadHandler;
     }
 
     public override void Unload()
     {
+        if (_onMapLoadHandler != null)
+        {
+            Core.Event.OnMapLoad -= _onMapLoadHandler;
+            _onMapLoadHandler = null;
+        }
         StopAllTimers();
         _sequentialIndexes.Clear();
     }
