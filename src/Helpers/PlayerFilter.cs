@@ -1,4 +1,5 @@
-using SwiftlyS2.API;
+using SwiftlyS2.Shared.Players;
+using SwiftlyS2.Shared.Permissions;
 
 namespace SwiftlyS2.Adverts.Helpers;
 
@@ -17,7 +18,7 @@ public static class PlayerFilter
         IEnumerable<IPlayer> players,
         string target,
         List<string> skipPermissions,
-        IPermission permService)
+        IPermissionManager permService)
     {
         // Filter out players with null Pawn (not fully connected)
         var validPlayers = players.Where(p => p.Pawn != null);

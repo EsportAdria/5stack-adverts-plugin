@@ -1,4 +1,4 @@
-using SwiftlyS2.API;
+using SwiftlyS2.Shared;
 
 namespace SwiftlyS2.Adverts.Helpers;
 

@@ -1,15 +1,19 @@
 using System.Threading;
-using SwiftlyS2.API;
+using Microsoft.Extensions.Logging;
+using SwiftlyS2.Shared;
+using SwiftlyS2.Shared.Plugins;
+using SwiftlyS2.Shared.Commands;
+using SwiftlyS2.Shared.Players;
+using SwiftlyS2.Shared.Events;
+using SwiftlyS2.Shared.Permissions;
 using SwiftlyS2.Adverts.Helpers;
 using SwiftlyS2.Adverts.Models;
 
 namespace SwiftlyS2.Adverts;
 
+[PluginMetadata(Id = "swiftlys2_adverts", Version = "1.0.0", Name = "Adverts", Author = "EsportAdria")]
 public class AdvertsPlugin : BasePlugin
 {
-    public override string Name => "Adverts";
-    public override string Author => "EsportAdria";
-    public override string Version => "1.0.0";
 
     private static readonly string[] ValidDisplayTypes = { "chat", "center", "center_html", "alert" };
 
@@ -72,25 +76,25 @@ public class AdvertsPlugin : BasePlugin
     {
         if (group.Messages.Count == 0)
         {
-            Core.Logger.Warning($"[Adverts] Group '{groupName}' has no messages, skipping.");
+            Core.Logger.LogWarning($"[Adverts] Group '{groupName}' has no messages, skipping.");
             return false;
         }
 
         if (group.IntervalSeconds <= 0)
         {
-            Core.Logger.Warning($"[Adverts] Group '{groupName}' has invalid interval ({group.IntervalSeconds}s), skipping.");
+            Core.Logger.LogWarning($"[Adverts] Group '{groupName}' has invalid interval ({group.IntervalSeconds}s), skipping.");
             return false;
         }
 
         if (!ValidDisplayTypes.Contains(group.DisplayType.ToLowerInvariant()))
         {
-            Core.Logger.Warning($"[Adverts] Group '{groupName}' has unknown display type '{group.DisplayType}', skipping.");
+            Core.Logger.LogWarning($"[Adverts] Group '{groupName}' has unknown display type '{group.DisplayType}', skipping.");
             return false;
         }
 
         if (!PlayerFilter.IsValidTarget(group.Target))
         {
-            Core.Logger.Warning($"[Adverts] Group '{groupName}' has unknown target '{group.Target}', defaulting to 'all'.");
+            Core.Logger.LogWarning($"[Adverts] Group '{groupName}' has unknown target '{group.Target}', defaulting to 'all'.");
         }
 
         return true;
