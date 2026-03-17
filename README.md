@@ -1,6 +1,14 @@
-# SwiftlyS2 Adverts
+<div align="center">
+  <img src="https://pan.samyyc.dev/s/VYmMXE" />
+  <h2><strong>EA Adverts</strong></h2>
+  <h3>Configurable periodic advertisement messages for your CS2 server.</h3>
+</div>
 
-A [SwiftlyS2](https://github.com/swiftly-solution/swiftlys2) plugin for Counter-Strike 2 that sends configurable periodic messages to players.
+<p align="center">
+  <img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build Status">
+  <img src="https://img.shields.io/github/downloads/EsportAdria/SwiftlyS2-EA_Adverts/total" alt="Downloads">
+  <img src="https://img.shields.io/github/stars/EsportAdria/SwiftlyS2-EA_Adverts?style=flat&logo=github" alt="Stars">
+</p>
 
 ## Features
 
@@ -21,7 +29,7 @@ A [SwiftlyS2](https://github.com/swiftly-solution/swiftlys2) plugin for Counter-
 
 ## Installation
 
-1. Download the latest release from [Releases](https://github.com/EsportAdria/swiftlys2-adverts/releases)
+1. Download the latest release from [Releases](https://github.com/EsportAdria/SwiftlyS2-EA_Adverts/releases)
 2. Extract the zip into your server's `game/csgo/addons/swiftlys2/plugins/` directory
 3. Restart the server or hot-reload the plugin
 4. Edit the generated `config.jsonc` to configure your messages
@@ -115,7 +123,7 @@ All commands require the corresponding permission. SwiftlyS2 auto-prefixes with 
 ## Building from Source
 
 ```bash
-git clone https://github.com/EsportAdria/swiftlys2-adverts.git
+git clone https://github.com/EsportAdria/SwiftlyS2-EA_Adverts.git
 cd swiftlys2-adverts
 dotnet publish --configuration Release
 ```
