@@ -124,7 +124,7 @@ All commands require the corresponding permission. SwiftlyS2 auto-prefixes with 
 
 ```bash
 git clone https://github.com/EsportAdria/SwiftlyS2-EA_Adverts.git
-cd swiftlys2-adverts
+cd EA_Adverts
 dotnet publish --configuration Release
 ```
 
