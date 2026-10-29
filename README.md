@@ -64,8 +64,11 @@ The registry builds the version list from this repository's GitHub releases, so 
       },
       {
         "name": "community",
+        "Enabled": true,
         "IntervalSeconds": 300,
         "Order": "random",
+        "DisplayType": "center",
+        "Target": "dead",
         "SkipPermissions": ["vip.ads.skip"],
         "Messages": [
           "[blue]You are playing on [yellow]{server_name}[blue], {player_count}/{max_players} on {map}."
@@ -76,7 +79,7 @@ The registry builds the version list from this repository's GitHub releases, so 
 }
 ```
 
-Keys are not case sensitive. The config is read at load, on every map change and on `sw_adverts_reload`. If the file can't be read (a JSON typo in a hand edit), the plugin logs an error and keeps the previous config.
+Keys are not case sensitive. The panel's JSON view expects every group field shown above; the plugin itself fills missing ones with the defaults (enabled, 60 s, sequential, chat, all). The config is read at load, on every map change and on `sw_adverts_reload`. If the file can't be read on a map change or `sw_adverts_reload` (a JSON typo in a hand edit), the plugin logs an error and keeps the previous config. At server start there is no previous config, so a broken file stops the plugin from loading and SwiftlyS2 logs the error. Files the panel writes are always valid JSON.
 
 Problems are logged and skipped instead of stopping the plugin:
 
