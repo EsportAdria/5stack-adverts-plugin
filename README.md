@@ -15,6 +15,9 @@
 - **Admin commands:** reload, list, toggle, preview, and one-off announcements (`sw_adverts_say`)
 - **5stack panel:** the config is edited as a form on the panel's plugin page
 
+> [!NOTE]
+> A plugin that keeps its own text in the center HUD overwrites `center` messages at once. On 5stack deathmatch servers the DM plugin's timer does this every second, so use `chat` or `center_html` for groups shown there.
+
 ## Requirements
 
 - [SwiftlyS2](https://github.com/swiftly-solution/swiftlys2) 1.5.0 or newer

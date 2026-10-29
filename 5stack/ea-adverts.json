@@ -82,6 +82,7 @@
                 "DisplayType": {
                   "type": "string",
                   "title": "Display",
+                  "description": "On deathmatch servers the DM plugin's timer overwrites center messages every second. Use chat or center_html there.",
                   "enum": ["chat", "center", "center_html", "alert"],
                   "default": "chat"
                 },
