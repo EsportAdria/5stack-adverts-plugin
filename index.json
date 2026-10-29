@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-29T16:13:46.362215Z",
+  "generated_at": "2026-10-29T16:27:55.682405Z",
   "plugins": [
     {
       "slug": "5stack-inventory",
@@ -919,6 +919,7 @@
                     "DisplayType": {
                       "type": "string",
                       "title": "Display",
+                      "description": "On deathmatch servers the DM plugin's timer overwrites center messages every second. Use chat or center_html there.",
                       "enum": [
                         "chat",
                         "center",
