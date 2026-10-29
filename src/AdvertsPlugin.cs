@@ -6,23 +6,26 @@ using SwiftlyS2.Shared.Plugins;
 using SwiftlyS2.Shared.Commands;
 using SwiftlyS2.Shared.Players;
 using SwiftlyS2.Shared.Events;
-using SwiftlyS2.Shared.Permissions;
 using SwiftlyS2.Adverts.Helpers;
+using SwiftlyS2.Adverts.Logic;
 using SwiftlyS2.Adverts.Models;
 
 namespace SwiftlyS2.Adverts;
 
-[PluginMetadata(Id = "EA_Adverts", Version = "1.0.0", Name = "Adverts", Author = "EsportAdria")]
+[PluginMetadata(Id = "EA_Adverts", Version = "__RELEASE_VERSION__", Name = "Adverts", Author = "EsportAdria")]
 public class AdvertsPlugin : BasePlugin
 {
+    // The panel writes this section to configs/plugins/EA_Adverts/config.jsonc
+    private const string ConfigSection = "Adverts";
 
-    private static readonly string[] ValidDisplayTypes = { "chat", "center", "center_html", "alert" };
-
-    private readonly Dictionary<string, CancellationTokenSource> _timers = new();
-    private readonly Dictionary<string, int> _sequentialIndexes = new();
+    private readonly Dictionary<string, CancellationTokenSource> _timers = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, AdvertRotation> _rotations = new(StringComparer.OrdinalIgnoreCase);
     private AdvertsConfig _config = new();
+    private List<AdvertGroup> _groups = new();
+    private TimeZoneInfo? _timeZone;
     private readonly Random _random = new();
-    private string _currentMap = "Unknown";
+    // null until OnMapLoad, or after a load mid-map until the first message reads it
+    private string? _currentMap;
     private EventDelegates.OnMapLoad? _onMapLoadHandler;
 
     public AdvertsPlugin(ISwiftlyCore core) : base(core) { }
@@ -37,16 +40,18 @@ public class AdvertsPlugin : BasePlugin
                 _onMapLoadHandler = null;
             }
             StopAllTimers();
-            _sequentialIndexes.Clear();
         }
 
+        // optional: a server without a panel config still loads and writes the defaults.
+        // No reloadOnChange: the panel restarts the server on a change, and LoadConfig
+        // rereads the file itself, so a watcher would only leak on plugin reloads.
         Core.Configuration
-            .InitializeJsonWithModel<AdvertsConfig>("config.jsonc", "Main")
+            .InitializeJsonWithModel<AdvertsConfig>("config.jsonc", ConfigSection)
             .Configure(builder =>
             {
-                builder.AddJsonFile("config.jsonc", optional: false, reloadOnChange: false);
+                builder.AddJsonFile("config.jsonc", optional: true, reloadOnChange: false);
             });
-        LoadConfig();
+        LoadConfig(initial: true);
 
         Core.Registrator.Register(this);
 
@@ -54,9 +59,10 @@ public class AdvertsPlugin : BasePlugin
 
         _onMapLoadHandler = (e) =>
         {
-            _currentMap = e.MapName; // cache map name for MessageFormatter
+            _currentMap = e.MapName;
             StopAllTimers();
-            _sequentialIndexes.Clear();
+            // pick up edits made since the last map
+            LoadConfig();
             StartAllTimers();
         };
         Core.Event.OnMapLoad += _onMapLoadHandler;
@@ -70,67 +76,71 @@ public class AdvertsPlugin : BasePlugin
             _onMapLoadHandler = null;
         }
         StopAllTimers();
-        _sequentialIndexes.Clear();
     }
 
-    private void LoadConfig()
+    /// <summary>
+    /// Rereads config.jsonc. On a read or bind error the previous config stays
+    /// in use, so a bad edit mid-season does not silence the server.
+    /// </summary>
+    private bool LoadConfig(bool initial = false)
     {
-        _config = Core.Configuration.Manager.GetSection("Main").Get<AdvertsConfig>() ?? new AdvertsConfig();
-    }
-
-    private bool IsGroupValid(string groupName, AdvertGroup group)
-    {
-        if (group.Messages.Count == 0)
+        var manager = Core.Configuration.Manager;
+        var warnings = new List<string>();
+        AdvertsConfig config;
+        try
         {
-            Core.Logger.LogWarning($"[Adverts] Group '{groupName}' has no messages, skipping.");
+            if (!initial && manager is IConfigurationRoot root)
+                root.Reload();
+
+            config = ConfigCheck.Bind(manager, ConfigSection, warnings);
+        }
+        catch (Exception e)
+        {
+            Core.Logger.LogError($"[Adverts] Could not read config.jsonc, keeping the previous config: {e.Message}");
             return false;
         }
 
-        if (group.IntervalSeconds <= 0)
-        {
-            Core.Logger.LogWarning($"[Adverts] Group '{groupName}' has invalid interval ({group.IntervalSeconds}s), skipping.");
-            return false;
-        }
+        var groups = ConfigCheck.Normalize(config, warnings);
+        if (groups.Count == 0)
+            warnings.Add("No groups configured, nothing will be shown. On 5stack, save the plugin config once in the panel.");
 
-        if (!ValidDisplayTypes.Contains(group.DisplayType.ToLowerInvariant()))
-        {
-            Core.Logger.LogWarning($"[Adverts] Group '{groupName}' has unknown display type '{group.DisplayType}', skipping.");
-            return false;
-        }
+        _config = config;
+        _groups = groups;
+        _timeZone = Clock.Resolve(_config.TimeZone, out var zoneError);
+        if (zoneError != null)
+            warnings.Add(zoneError);
 
-        if (!PlayerFilter.IsValidTarget(group.Target))
+        foreach (var warning in warnings)
         {
-            Core.Logger.LogWarning($"[Adverts] Group '{groupName}' has unknown target '{group.Target}', defaulting to 'all'.");
+            Core.Logger.LogWarning($"[Adverts] {warning}");
         }
-
         return true;
     }
 
-    private void StartGroupTimer(string groupName, AdvertGroup group)
+    private AdvertGroup? FindGroup(string name)
     {
-        if (!_sequentialIndexes.ContainsKey(groupName))
-            _sequentialIndexes[groupName] = 0;
+        return _groups.FirstOrDefault(g => g.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void StartGroupTimer(AdvertGroup group)
+    {
+        _rotations[group.Name] = new AdvertRotation(group.Order, group.Messages.Count, _random);
 
         var token = Core.Scheduler.DelayAndRepeatBySeconds(
             group.IntervalSeconds,
             group.IntervalSeconds,
-            () => OnTimerTick(groupName, group));
+            () => OnTimerTick(group));
 
         Core.Scheduler.StopOnMapChange(token);
-        _timers[groupName] = token;
+        _timers[group.Name] = token;
     }
 
     private void StartAllTimers()
     {
-        foreach (var (groupName, group) in _config.Groups)
+        foreach (var group in _groups)
         {
-            if (!group.Enabled)
-                continue;
-
-            if (!IsGroupValid(groupName, group))
-                continue;
-
-            StartGroupTimer(groupName, group);
+            if (group.Enabled)
+                StartGroupTimer(group);
         }
     }
 
@@ -141,35 +151,18 @@ public class AdvertsPlugin : BasePlugin
             token.Cancel();
         }
         _timers.Clear();
+        _rotations.Clear();
     }
 
-    private void OnTimerTick(string groupName, AdvertGroup group)
+    private void OnTimerTick(AdvertGroup group)
     {
-        string messageTemplate;
-        if (group.Order.Equals("random", StringComparison.OrdinalIgnoreCase))
-        {
-            messageTemplate = group.Messages[_random.Next(group.Messages.Count)];
-        }
-        else
-        {
-            var index = _sequentialIndexes.GetValueOrDefault(groupName, 0);
-            messageTemplate = group.Messages[index];
-            _sequentialIndexes[groupName] = (index + 1) % group.Messages.Count;
-        }
+        if (!_rotations.TryGetValue(group.Name, out var rotation))
+            return;
 
-        var message = MessageFormatter.FormatMessage(
-            messageTemplate,
-            _config.Prefix,
-            _config.PrefixColor,
-            group.DisplayType,
-            Core,
-            _currentMap);
-
-        var players = Core.PlayerManager.GetAllValidPlayers()
-            .Where(p => !p.IsFakeClient);
+        var message = Render(group.Messages[rotation.Next()], group.DisplayType);
 
         var targets = PlayerFilter.FilterPlayers(
-            players,
+            HumanPlayers(),
             group.Target,
             group.SkipPermissions,
             Core.Permission);
@@ -180,9 +173,48 @@ public class AdvertsPlugin : BasePlugin
         }
     }
 
+    private IEnumerable<IPlayer> HumanPlayers()
+    {
+        return Core.PlayerManager.GetAllValidPlayers().Where(p => !p.IsFakeClient);
+    }
+
+    private string CurrentMap()
+    {
+        if (_currentMap == null)
+        {
+            try
+            {
+                var map = Core.Engine.GlobalVars.MapName.Value;
+                if (!string.IsNullOrEmpty(map))
+                    _currentMap = map;
+            }
+            catch (Exception e)
+            {
+                Core.Logger.LogWarning($"[Adverts] Could not read the current map: {e.Message}");
+            }
+        }
+        return _currentMap ?? "Unknown";
+    }
+
+    private string Render(string template, string displayType)
+    {
+        var now = Clock.Now(_timeZone, DateTime.UtcNow);
+        var values = new Dictionary<string, string>
+        {
+            ["server_name"] = Core.ConVar.Find<string>("hostname")?.Value ?? "Unknown",
+            ["map"] = CurrentMap(),
+            ["player_count"] = HumanPlayers().Count().ToString(),
+            ["max_players"] = Core.PlayerManager.MaxPlayers.ToString(),
+            ["time"] = Clock.Format(now, _config.TimeFormat, "HH:mm"),
+            ["date"] = Clock.Format(now, _config.DateFormat, "dd.MM.yyyy"),
+        };
+
+        return MessageFormatter.Format(template, values, _config.Prefix, _config.PrefixColor, displayType);
+    }
+
     private void SendToPlayer(IPlayer player, string message, string displayType)
     {
-        switch (displayType.ToLowerInvariant())
+        switch (displayType)
         {
             case "chat":
                 player.SendChat(message);
@@ -204,26 +236,28 @@ public class AdvertsPlugin : BasePlugin
     [Command("adverts_reload", permission: "admins.adverts.reload")]
     public void OnReloadCommand(ICommandContext context)
     {
+        var loaded = LoadConfig();
         StopAllTimers();
-        LoadConfig();
         StartAllTimers();
-        context.Reply("[Adverts] Configuration reloaded.");
+        context.Reply(loaded
+            ? $"[Adverts] Configuration reloaded, {_timers.Count} group(s) running."
+            : $"[Adverts] config.jsonc could not be read (see the server log), kept the previous config with {_timers.Count} group(s) running.");
     }
 
     [Command("adverts_list", permission: "admins.adverts.list")]
     public void OnListCommand(ICommandContext context)
     {
-        if (_config.Groups.Count == 0)
+        if (_groups.Count == 0)
         {
             context.Reply("[Adverts] No groups configured.");
             return;
         }
 
-        foreach (var (name, group) in _config.Groups)
+        foreach (var group in _groups)
         {
             var configState = group.Enabled ? "enabled" : "disabled";
-            var runtimeState = _timers.ContainsKey(name) ? "running" : "stopped";
-            context.Reply($"[Adverts] {name}: config={configState} runtime={runtimeState} | interval: {group.IntervalSeconds}s | messages: {group.Messages.Count} | display: {group.DisplayType} | target: {group.Target}");
+            var runtimeState = _timers.ContainsKey(group.Name) ? "running" : "stopped";
+            context.Reply($"[Adverts] {group.Name}: config={configState} runtime={runtimeState} | interval: {group.IntervalSeconds}s | messages: {group.Messages.Count} | display: {group.DisplayType} | target: {group.Target}");
         }
     }
 
@@ -237,29 +271,24 @@ public class AdvertsPlugin : BasePlugin
             return;
         }
 
-        var groupName = args[0];
-        if (!_config.Groups.TryGetValue(groupName, out var group))
+        var group = FindGroup(args[0]);
+        if (group == null)
         {
-            context.Reply($"[Adverts] Group '{groupName}' not found.");
+            context.Reply($"[Adverts] Group '{args[0]}' not found.");
             return;
         }
 
-        if (_timers.TryGetValue(groupName, out var token))
+        if (_timers.TryGetValue(group.Name, out var token))
         {
             token.Cancel();
-            _timers.Remove(groupName);
-            context.Reply($"[Adverts] Group '{groupName}' disabled.");
+            _timers.Remove(group.Name);
+            _rotations.Remove(group.Name);
+            context.Reply($"[Adverts] Group '{group.Name}' stopped until the next map or reload.");
         }
         else
         {
-            if (!IsGroupValid(groupName, group))
-            {
-                context.Reply($"[Adverts] Group '{groupName}' has invalid configuration.");
-                return;
-            }
-
-            StartGroupTimer(groupName, group);
-            context.Reply($"[Adverts] Group '{groupName}' enabled.");
+            StartGroupTimer(group);
+            context.Reply($"[Adverts] Group '{group.Name}' started until the next map or reload.");
         }
     }
 
@@ -273,16 +302,10 @@ public class AdvertsPlugin : BasePlugin
             return;
         }
 
-        var groupName = args[0];
-        if (!_config.Groups.TryGetValue(groupName, out var group))
+        var group = FindGroup(args[0]);
+        if (group == null)
         {
-            context.Reply($"[Adverts] Group '{groupName}' not found.");
-            return;
-        }
-
-        if (group.Messages.Count == 0)
-        {
-            context.Reply($"[Adverts] Group '{groupName}' has no messages.");
+            context.Reply($"[Adverts] Group '{args[0]}' not found.");
             return;
         }
 
@@ -293,16 +316,10 @@ public class AdvertsPlugin : BasePlugin
         }
         else
         {
-            index = _sequentialIndexes.GetValueOrDefault(groupName, 0);
+            index = _rotations.TryGetValue(group.Name, out var rotation) ? rotation.Peek : 0;
         }
 
-        var message = MessageFormatter.FormatMessage(
-            group.Messages[index],
-            _config.Prefix,
-            _config.PrefixColor,
-            group.DisplayType,
-            Core,
-            _currentMap);
+        var message = Render(group.Messages[index], group.DisplayType);
 
         if (!context.IsSentByPlayer)
         {
@@ -310,8 +327,29 @@ public class AdvertsPlugin : BasePlugin
             return;
         }
 
-        var player = context.Sender!;
-        SendToPlayer(player, message, group.DisplayType);
-        context.Reply($"[Adverts] Previewing message {index} from group '{groupName}'.");
+        SendToPlayer(context.Sender!, message, group.DisplayType);
+        context.Reply($"[Adverts] Previewing message {index} from group '{group.Name}'.");
+    }
+
+    // One-off announcement to everyone, e.g. over RCON: sw_adverts_say center "Restart in 5 minutes"
+    [Command("adverts_say", permission: "admins.adverts.say")]
+    public void OnSayCommand(ICommandContext context)
+    {
+        var args = context.Args;
+        var display = args.Length >= 1 ? args[0].ToLowerInvariant() : "";
+        if (args.Length < 2 || !ConfigCheck.DisplayTypes.Contains(display))
+        {
+            context.Reply($"[Adverts] Usage: sw_adverts_say <{string.Join("|", ConfigCheck.DisplayTypes)}> <text>");
+            return;
+        }
+
+        var message = Render(string.Join(' ', args.Skip(1)), display);
+        var count = 0;
+        foreach (var player in HumanPlayers())
+        {
+            SendToPlayer(player, message, display);
+            count++;
+        }
+        context.Reply($"[Adverts] Sent to {count} player(s).");
     }
 }

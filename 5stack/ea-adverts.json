@@ -1,0 +1,154 @@
+{
+  "$schema": "../../schema/plugin.schema.json",
+  "slug": "ea-adverts",
+  "kind": "game",
+  "name": "EA Adverts",
+  "author": "EsportAdria",
+  "description": "Timed server messages in chat, center HUD, center HTML or alert. Groups with their own interval, order, team or alive/dead targeting and permission skip, edited in the panel. Also sends one-off announcements over RCON.",
+  "homepage": "https://github.com/EsportAdria/5stack-adverts-plugin",
+  "tags": ["adverts", "announcements", "messages", "community"],
+  "verified": false,
+  "hot_swappable": false,
+  "config_path": "addons/swiftlys2/configs/plugins/EA_Adverts/config.jsonc",
+  "config_schema": {
+    "type": "object",
+    "properties": {
+      "Adverts": {
+        "type": "object",
+        "title": "Adverts",
+        "properties": {
+          "Prefix": {
+            "type": "string",
+            "title": "Chat prefix",
+            "description": "Put in front of chat messages. Leave empty for none."
+          },
+          "PrefixColor": {
+            "type": "string",
+            "title": "Prefix colour",
+            "enum": ["default", "white", "red", "lightred", "darkred", "green", "lime", "olive", "blue", "lightblue", "darkblue", "bluegrey", "purple", "lightpurple", "magenta", "yellow", "lightyellow", "gold", "orange", "grey", "silver"]
+          },
+          "TimeZone": {
+            "type": "string",
+            "title": "Time zone",
+            "description": "IANA name for {time} and {date}, for example Europe/Zagreb. Empty uses the server's clock."
+          },
+          "TimeFormat": {
+            "type": "string",
+            "title": "Time format",
+            "description": ".NET format for {time}, for example HH:mm."
+          },
+          "DateFormat": {
+            "type": "string",
+            "title": "Date format",
+            "description": ".NET format for {date}, for example dd.MM.yyyy."
+          },
+          "Groups": {
+            "type": "array",
+            "title": "Groups",
+            "description": "Each group runs on its own timer. Placeholders: {server_name}, {map}, {player_count}, {max_players}, {time}, {date}. Chat colours: [default], [white], [red], [lightred], [darkred], [green], [lime], [olive], [blue], [lightblue], [darkblue], [bluegrey], [purple], [lightpurple], [magenta], [yellow], [lightyellow], [gold], [orange], [grey], [silver].",
+            "items": {
+              "type": "object",
+              "title": "Group",
+              "required": ["name", "Enabled", "IntervalSeconds", "Order", "DisplayType", "Target", "Messages"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "title": "Name",
+                  "description": "Used by sw_adverts_toggle and sw_adverts_preview."
+                },
+                "Enabled": {
+                  "type": "boolean",
+                  "title": "Enabled",
+                  "default": true
+                },
+                "IntervalSeconds": {
+                  "type": "integer",
+                  "title": "Interval (seconds)",
+                  "minimum": 5,
+                  "maximum": 86400,
+                  "default": 60
+                },
+                "Order": {
+                  "type": "string",
+                  "title": "Order",
+                  "enum": ["sequential", "random"],
+                  "default": "sequential"
+                },
+                "DisplayType": {
+                  "type": "string",
+                  "title": "Display",
+                  "enum": ["chat", "center", "center_html", "alert"],
+                  "default": "chat"
+                },
+                "Target": {
+                  "type": "string",
+                  "title": "Show to",
+                  "enum": ["all", "alive", "dead", "t", "ct"],
+                  "default": "all"
+                },
+                "SkipPermissions": {
+                  "type": "array",
+                  "title": "Skip for permissions",
+                  "description": "Players with any of these SwiftlyS2 permissions don't see this group, for example vip.ads.skip.",
+                  "items": { "type": "string" }
+                },
+                "Messages": {
+                  "type": "array",
+                  "title": "Messages",
+                  "description": "One message per line.",
+                  "minItems": 1,
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "config_default": {
+    "Adverts": {
+      "Prefix": "[EA]",
+      "PrefixColor": "red",
+      "TimeZone": "Europe/Zagreb",
+      "TimeFormat": "HH:mm",
+      "DateFormat": "dd.MM.yyyy",
+      "Groups": [
+        {
+          "name": "rules",
+          "Enabled": true,
+          "IntervalSeconds": 120,
+          "Order": "sequential",
+          "DisplayType": "chat",
+          "Target": "all",
+          "SkipPermissions": [],
+          "Messages": [
+            "[green]Be respectful to other players.",
+            "[red]Cheating results in a permanent ban."
+          ]
+        },
+        {
+          "name": "community",
+          "Enabled": true,
+          "IntervalSeconds": 300,
+          "Order": "random",
+          "DisplayType": "chat",
+          "Target": "all",
+          "SkipPermissions": ["vip.ads.skip"],
+          "Messages": [
+            "[blue]Join our Discord: [yellow]discord.gg/esportadria",
+            "[blue]You are playing on [yellow]{server_name}[blue], {player_count}/{max_players} players on {map}."
+          ]
+        }
+      ]
+    }
+  },
+  "variants": {
+    "swiftlys2": {
+      "repo": "EsportAdria/5stack-adverts-plugin",
+      "asset": "EA_Adverts-v*.zip",
+      "layout": "plugin",
+      "install_path": "addons/swiftlys2/plugins"
+    }
+  }
+}
