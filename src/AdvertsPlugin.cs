@@ -201,7 +201,9 @@ public class AdvertsPlugin : BasePlugin
         var now = Clock.Now(_timeZone, DateTime.UtcNow);
         var values = new Dictionary<string, string>
         {
-            ["server_name"] = Core.ConVar.Find<string>("hostname")?.Value ?? "Unknown",
+            ["server_name"] = string.IsNullOrWhiteSpace(_config.ServerName)
+                ? Core.ConVar.Find<string>("hostname")?.Value ?? "Unknown"
+                : _config.ServerName,
             ["map"] = CurrentMap(),
             ["player_count"] = HumanPlayers().Count().ToString(),
             ["max_players"] = Core.PlayerManager.MaxPlayers.ToString(),

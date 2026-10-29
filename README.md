@@ -11,7 +11,7 @@
 - **Permission skip:** hide a group from VIPs or any SwiftlyS2 permission
 - **Order:** sequential, or random without the same message twice in a row
 - **Placeholders:** `{server_name}`, `{map}`, `{player_count}`, `{max_players}`, `{time}`, `{date}`
-- **Chat colours:** SwiftlyS2 tokens such as `[red]`, `[green]`, `[default]`
+- **Colours:** SwiftlyS2 tokens such as `[red]`, `[green]`, `[default]`. Chat shows them, center HTML turns them into `<font>` colours, center and alert drop them (the CS2 center HUD has no colours)
 - **Admin commands:** reload, list, toggle, preview, and one-off announcements (`sw_adverts_say`)
 - **5stack panel:** the config is edited as a form on the panel's plugin page
 
@@ -45,6 +45,7 @@ The registry builds the version list from this repository's GitHub releases, so 
   "Adverts": {
     "Prefix": "[EA]",                // put in front of chat messages, "" for none
     "PrefixColor": "red",            // a SwiftlyS2 colour token without brackets
+    "ServerName": "",                // {server_name}; "" uses the hostname cvar
     "TimeZone": "Europe/Zagreb",     // IANA name for {time} and {date}, "" for the server clock
     "TimeFormat": "HH:mm",
     "DateFormat": "dd.MM.yyyy",
@@ -95,7 +96,7 @@ Problems are logged and skipped instead of stopping the plugin:
 
 | Placeholder | Value |
 |---|---|
-| `{server_name}` | `hostname` cvar |
+| `{server_name}` | `ServerName`, or the `hostname` cvar when empty. 5stack doesn't set the hostname on its servers (it stays `Counter-Strike 2`), so set `ServerName` in each server's plugin config |
 | `{map}` | current map |
 | `{player_count}` | human players connected |
 | `{max_players}` | server slots |

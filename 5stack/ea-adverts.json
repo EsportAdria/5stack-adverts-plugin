@@ -27,6 +27,11 @@
             "title": "Prefix colour",
             "enum": ["default", "white", "red", "lightred", "darkred", "green", "lime", "olive", "blue", "lightblue", "darkblue", "bluegrey", "purple", "lightpurple", "magenta", "yellow", "lightyellow", "gold", "orange", "grey", "silver"]
           },
+          "ServerName": {
+            "type": "string",
+            "title": "Server name",
+            "description": "Shown for {server_name}. Set it per server: 5stack doesn't set the hostname, so empty shows Counter-Strike 2."
+          },
           "TimeZone": {
             "type": "string",
             "title": "Time zone",
@@ -45,7 +50,7 @@
           "Groups": {
             "type": "array",
             "title": "Groups",
-            "description": "Each group runs on its own timer. Placeholders: {server_name}, {map}, {player_count}, {max_players}, {time}, {date}. Chat colours: [default], [white], [red], [lightred], [darkred], [green], [lime], [olive], [blue], [lightblue], [darkblue], [bluegrey], [purple], [lightpurple], [magenta], [yellow], [lightyellow], [gold], [orange], [grey], [silver].",
+            "description": "Each group runs on its own timer. Placeholders: {server_name}, {map}, {player_count}, {max_players}, {time}, {date}. Colours (chat and center_html; center and alert drop them): [default], [white], [red], [lightred], [darkred], [green], [lime], [olive], [blue], [lightblue], [darkblue], [bluegrey], [purple], [lightpurple], [magenta], [yellow], [lightyellow], [gold], [orange], [grey], [silver].",
             "items": {
               "type": "object",
               "title": "Group",
@@ -110,6 +115,7 @@
     "Adverts": {
       "Prefix": "[EA]",
       "PrefixColor": "red",
+      "ServerName": "",
       "TimeZone": "Europe/Zagreb",
       "TimeFormat": "HH:mm",
       "DateFormat": "dd.MM.yyyy",
