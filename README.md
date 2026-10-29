@@ -130,4 +130,4 @@ dotnet publish EA_Adverts.csproj -c Release -o publish/EA_Adverts
 
 ## License
 
-All rights reserved. EsportAdria.
+MIT, see [LICENSE](LICENSE).
