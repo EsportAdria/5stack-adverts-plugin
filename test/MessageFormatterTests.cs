@@ -115,6 +115,39 @@ public class MessageFormatterTests
             .GetProperty("PrefixColor").GetProperty("enum")
             .EnumerateArray().Select(e => e.GetString()!);
 
-        Assert.Equal(MessageFormatter.Colours.Keys.OrderBy(k => k), colours.OrderBy(k => k));
+        Assert.Equal(MessageFormatter.Colours.Keys.Except(MessageFormatter.Aliases).OrderBy(k => k), colours.OrderBy(k => k));
+    }
+
+    [Fact]
+    public void CenterHtmlEscapesOnlyMarkup()
+    {
+        var values = new Dictionary<string, string> { ["server_name"] = "Café Leo's č" };
+
+        Assert.Equal("Café Leo's č", MessageFormatter.Format("{server_name}", values, "", "", "center_html"));
+    }
+
+    [Fact]
+    public void GrayIsAnAliasOfGrey()
+    {
+        Assert.Equal("hi", MessageFormatter.Format("[gray]hi", Values, "", "", "center"));
+        Assert.Equal("<font color='#C6CBD0'>hi</font>", MessageFormatter.Format("[gray]hi", Values, "", "", "center_html"));
+    }
+
+    [Fact]
+    public void AdjacentTokensKeepTheLastColour()
+    {
+        Assert.Equal("x", MessageFormatter.Format("[red][blue]x[default][default]", Values, "", "", "center"));
+        Assert.EndsWith("<font color='#4B69FF'>x</font>", MessageFormatter.Format("[red][blue]x[default][default]", Values, "", "", "center_html"));
+    }
+
+    [Theory]
+    [InlineData("EA DM #1", "Counter-Strike 2", "EA DM #1")]
+    [InlineData("  EA DM #1 ", "Counter-Strike 2", "EA DM #1")]
+    [InlineData("", "Counter-Strike 2", "Counter-Strike 2")]
+    [InlineData(" ", null, "Unknown")]
+    [InlineData(null, "", "Unknown")]
+    public void ServerNameFallsBackToTheHostname(string? configured, string? hostname, string expected)
+    {
+        Assert.Equal(expected, MessageFormatter.ServerName(configured, hostname));
     }
 }

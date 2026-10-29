@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text.RegularExpressions;
 
 namespace SwiftlyS2.Adverts.Logic;
@@ -38,6 +37,7 @@ public static class MessageFormatter
             ["gold"] = "#E4AE39",
             ["orange"] = "#F08C3C",
             ["grey"] = "#C6CBD0",
+            ["gray"] = "#C6CBD0",
             ["silver"] = "#B0B0B0",
         };
 
@@ -45,6 +45,20 @@ public static class MessageFormatter
     private static readonly Regex ColourTag = new(
         @"\[(" + string.Join("|", Colours.Keys) + @")\]",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    // Spellings SwiftlyS2 accepts that the panel form doesn't offer
+    public static readonly string[] Aliases = { "gray" };
+
+    /// <summary>
+    /// The value for {server_name}: the configured name, or the hostname cvar
+    /// when none is set (5stack leaves it at "Counter-Strike 2").
+    /// </summary>
+    public static string ServerName(string? configured, string? hostname)
+    {
+        return string.IsNullOrWhiteSpace(configured)
+            ? (string.IsNullOrEmpty(hostname) ? "Unknown" : hostname)
+            : configured.Trim();
+    }
 
     /// <summary>
     /// Replaces {placeholder} tokens with their values, adds the coloured
@@ -62,8 +76,9 @@ public static class MessageFormatter
         var message = template;
         foreach (var (key, value) in values)
         {
-            // a "<" in a server name must not break the HTML
-            message = message.Replace("{" + key + "}", html ? WebUtility.HtmlEncode(value) : value);
+            // a "<" in a server name must not break the HTML. Only these three:
+            // the HUD may not decode numeric entities such as &#233;
+            message = message.Replace("{" + key + "}", html ? EscapeText(value) : value);
         }
 
         switch (displayType)
@@ -81,6 +96,11 @@ public static class MessageFormatter
             default:
                 return ColourTag.Replace(message, "");
         }
+    }
+
+    private static string EscapeText(string value)
+    {
+        return value.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
     }
 
     // Each colour token closes the previous <font>; [default] only closes it
