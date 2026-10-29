@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-29T15:02:58.070186Z",
+  "generated_at": "2026-10-29T16:13:46.362215Z",
   "plugins": [
     {
       "slug": "5stack-inventory",
@@ -853,6 +853,11 @@
                   "silver"
                 ]
               },
+              "ServerName": {
+                "type": "string",
+                "title": "Server name",
+                "description": "Shown for {server_name}. Set it per server: 5stack doesn't set the hostname, so empty shows Counter-Strike 2."
+              },
               "TimeZone": {
                 "type": "string",
                 "title": "Time zone",
@@ -871,7 +876,7 @@
               "Groups": {
                 "type": "array",
                 "title": "Groups",
-                "description": "Each group runs on its own timer. Placeholders: {server_name}, {map}, {player_count}, {max_players}, {time}, {date}. Chat colours: [default], [white], [red], [lightred], [darkred], [green], [lime], [olive], [blue], [lightblue], [darkblue], [bluegrey], [purple], [lightpurple], [magenta], [yellow], [lightyellow], [gold], [orange], [grey], [silver].",
+                "description": "Each group runs on its own timer. Placeholders: {server_name}, {map}, {player_count}, {max_players}, {time}, {date}. Colours (chat and center_html; center and alert drop them): [default], [white], [red], [lightred], [darkred], [green], [lime], [olive], [blue], [lightblue], [darkblue], [bluegrey], [purple], [lightpurple], [magenta], [yellow], [lightyellow], [gold], [orange], [grey], [silver].",
                 "items": {
                   "type": "object",
                   "title": "Group",
@@ -962,6 +967,7 @@
         "Adverts": {
           "Prefix": "[EA]",
           "PrefixColor": "red",
+          "ServerName": "",
           "TimeZone": "Europe/Zagreb",
           "TimeFormat": "HH:mm",
           "DateFormat": "dd.MM.yyyy",
@@ -1006,6 +1012,17 @@
         }
       },
       "versions": [
+        {
+          "version": "2.0.1",
+          "runtime": "swiftlys2",
+          "url": "https://github.com/EsportAdria/5stack-adverts-plugin/releases/download/v2.0.1/EA_Adverts-v2.0.1.zip",
+          "sha256": "904c442d24141f46ec4fa3516d7cf6b40e46381e6e5c2d234f3fcd84d71f11ce",
+          "size": 25274,
+          "published_at": "2026-10-29T16:13:24Z",
+          "prerelease": false,
+          "layout": "plugin",
+          "install_path": "addons/swiftlys2/plugins"
+        },
         {
           "version": "2.0.0",
           "runtime": "swiftlys2",
