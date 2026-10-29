@@ -5,7 +5,7 @@
   "name": "EA Adverts",
   "author": "EsportAdria",
   "description": "Timed server messages in chat, center HUD, center HTML or alert. Groups with their own interval, order, team or alive/dead targeting and permission skip, edited in the panel. Also sends one-off announcements over RCON.",
-  "homepage": "https://github.com/EsportAdria/EA_Adverts-SwiftlyS2",
+  "homepage": "https://github.com/EsportAdria/5stack-adverts-plugin",
   "tags": ["adverts", "announcements", "messages", "community"],
   "verified": false,
   "hot_swappable": false,
@@ -144,7 +144,7 @@
   },
   "variants": {
     "swiftlys2": {
-      "repo": "EsportAdria/EA_Adverts-SwiftlyS2",
+      "repo": "EsportAdria/5stack-adverts-plugin",
       "asset": "EA_Adverts-v*.zip",
       "layout": "plugin",
       "install_path": "addons/swiftlys2/plugins"

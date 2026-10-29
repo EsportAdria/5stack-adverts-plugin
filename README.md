@@ -32,7 +32,7 @@ The registry builds the version list from this repository's GitHub releases, so 
 
 ## Install by hand
 
-1. Download `EA_Adverts-vX.Y.Z.zip` from [Releases](https://github.com/EsportAdria/EA_Adverts-SwiftlyS2/releases).
+1. Download `EA_Adverts-vX.Y.Z.zip` from [Releases](https://github.com/EsportAdria/5stack-adverts-plugin/releases).
 2. Extract it into `game/csgo/addons/swiftlys2/plugins/` (the zip holds an `EA_Adverts/` folder).
 3. Start the server once. The plugin writes an empty `addons/swiftlys2/configs/plugins/EA_Adverts/config.jsonc`; fill it in like the example below.
 
