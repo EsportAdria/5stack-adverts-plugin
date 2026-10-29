@@ -49,9 +49,9 @@
             "items": {
               "type": "object",
               "title": "Group",
-              "required": ["Name", "Messages"],
+              "required": ["name", "Enabled", "IntervalSeconds", "Order", "DisplayType", "Target", "Messages"],
               "properties": {
-                "Name": {
+                "name": {
                   "type": "string",
                   "title": "Name",
                   "description": "Used by sw_adverts_toggle and sw_adverts_preview."
@@ -65,6 +65,7 @@
                   "type": "integer",
                   "title": "Interval (seconds)",
                   "minimum": 5,
+                  "maximum": 86400,
                   "default": 60
                 },
                 "Order": {
@@ -114,7 +115,7 @@
       "DateFormat": "dd.MM.yyyy",
       "Groups": [
         {
-          "Name": "rules",
+          "name": "rules",
           "Enabled": true,
           "IntervalSeconds": 120,
           "Order": "sequential",
@@ -127,7 +128,7 @@
           ]
         },
         {
-          "Name": "community",
+          "name": "community",
           "Enabled": true,
           "IntervalSeconds": 300,
           "Order": "random",

@@ -15,19 +15,19 @@ public class RegistryEntryTests
         return JsonDocument.Parse(File.ReadAllText(path)).RootElement;
     }
 
-    private static AdvertsConfig Bind(string json)
+    internal static AdvertsConfig Bind(string json, List<string> warnings)
     {
         var configuration = new ConfigurationBuilder()
             .AddJsonStream(new MemoryStream(Encoding.UTF8.GetBytes(json)))
             .Build();
-        return configuration.GetSection("Adverts").Get<AdvertsConfig>()!;
+        return ConfigCheck.Bind(configuration, "Adverts", warnings);
     }
 
     [Fact]
     public void DefaultConfigBindsAndPassesTheCheck()
     {
-        var config = Bind(Entry().GetProperty("config_default").GetRawText());
         var warnings = new List<string>();
+        var config = Bind(Entry().GetProperty("config_default").GetRawText(), warnings);
 
         var groups = ConfigCheck.Normalize(config, warnings);
 
@@ -52,6 +52,25 @@ public class RegistryEntryTests
         Assert.Equal(ConfigCheck.Targets, Enum("Target"));
         Assert.Equal(ConfigCheck.Orders, Enum("Order"));
         Assert.Equal(ConfigCheck.MinIntervalSeconds, group.GetProperty("IntervalSeconds").GetProperty("minimum").GetInt32());
+        Assert.Equal(ConfigCheck.MaxIntervalSeconds, group.GetProperty("IntervalSeconds").GetProperty("maximum").GetInt32());
+    }
+
+    // The panel seeds a new list item only with required keys, and titles it by a lowercase "name"
+    [Fact]
+    public void NewGroupsInThePanelGetDefaultsAndATitle()
+    {
+        var items = Entry()
+            .GetProperty("config_schema").GetProperty("properties")
+            .GetProperty("Adverts").GetProperty("properties")
+            .GetProperty("Groups").GetProperty("items");
+        var required = items.GetProperty("required").EnumerateArray().Select(e => e.GetString()).ToHashSet();
+
+        Assert.True(items.GetProperty("properties").TryGetProperty("name", out _));
+        foreach (var property in items.GetProperty("properties").EnumerateObject())
+        {
+            if (property.Value.TryGetProperty("default", out _))
+                Assert.Contains(property.Name, required);
+        }
     }
 
     [Fact]
@@ -65,8 +84,10 @@ public class RegistryEntryTests
     [Fact]
     public void AMissingSectionGivesNoGroups()
     {
-        var config = Bind("{}") ?? new AdvertsConfig();
+        var warnings = new List<string>();
+        var config = Bind("{}", warnings);
 
-        Assert.Empty(ConfigCheck.Normalize(config, new List<string>()));
+        Assert.Empty(ConfigCheck.Normalize(config, warnings));
+        Assert.Empty(warnings);
     }
 }

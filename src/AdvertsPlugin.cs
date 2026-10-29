@@ -24,7 +24,8 @@ public class AdvertsPlugin : BasePlugin
     private List<AdvertGroup> _groups = new();
     private TimeZoneInfo? _timeZone;
     private readonly Random _random = new();
-    private string _currentMap = "Unknown";
+    // null until OnMapLoad, or after a load mid-map until the first message reads it
+    private string? _currentMap;
     private EventDelegates.OnMapLoad? _onMapLoadHandler;
 
     public AdvertsPlugin(ISwiftlyCore core) : base(core) { }
@@ -39,28 +40,18 @@ public class AdvertsPlugin : BasePlugin
                 _onMapLoadHandler = null;
             }
             StopAllTimers();
-
-            // no OnMapLoad until the next map, so read the current one now
-            try
-            {
-                var map = Core.Engine.GlobalVars.MapName.Value;
-                if (!string.IsNullOrEmpty(map))
-                    _currentMap = map;
-            }
-            catch (Exception e)
-            {
-                Core.Logger.LogWarning($"[Adverts] Could not read the current map: {e.Message}");
-            }
         }
 
-        // optional: a server without a panel config still loads and writes the defaults
+        // optional: a server without a panel config still loads and writes the defaults.
+        // No reloadOnChange: the panel restarts the server on a change, and LoadConfig
+        // rereads the file itself, so a watcher would only leak on plugin reloads.
         Core.Configuration
             .InitializeJsonWithModel<AdvertsConfig>("config.jsonc", ConfigSection)
             .Configure(builder =>
             {
-                builder.AddJsonFile("config.jsonc", optional: true, reloadOnChange: true);
+                builder.AddJsonFile("config.jsonc", optional: true, reloadOnChange: false);
             });
-        LoadConfig();
+        LoadConfig(initial: true);
 
         Core.Registrator.Register(this);
 
@@ -87,12 +78,34 @@ public class AdvertsPlugin : BasePlugin
         StopAllTimers();
     }
 
-    private void LoadConfig()
+    /// <summary>
+    /// Rereads config.jsonc. On a read or bind error the previous config stays
+    /// in use, so a bad edit mid-season does not silence the server.
+    /// </summary>
+    private bool LoadConfig(bool initial = false)
     {
-        _config = Core.Configuration.Manager.GetSection(ConfigSection).Get<AdvertsConfig>() ?? new AdvertsConfig();
-
+        var manager = Core.Configuration.Manager;
         var warnings = new List<string>();
-        _groups = ConfigCheck.Normalize(_config, warnings);
+        AdvertsConfig config;
+        try
+        {
+            if (!initial && manager is IConfigurationRoot root)
+                root.Reload();
+
+            config = ConfigCheck.Bind(manager, ConfigSection, warnings);
+        }
+        catch (Exception e)
+        {
+            Core.Logger.LogError($"[Adverts] Could not read config.jsonc, keeping the previous config: {e.Message}");
+            return false;
+        }
+
+        var groups = ConfigCheck.Normalize(config, warnings);
+        if (groups.Count == 0)
+            warnings.Add("No groups configured, nothing will be shown. On 5stack, save the plugin config once in the panel.");
+
+        _config = config;
+        _groups = groups;
         _timeZone = Clock.Resolve(_config.TimeZone, out var zoneError);
         if (zoneError != null)
             warnings.Add(zoneError);
@@ -101,6 +114,7 @@ public class AdvertsPlugin : BasePlugin
         {
             Core.Logger.LogWarning($"[Adverts] {warning}");
         }
+        return true;
     }
 
     private AdvertGroup? FindGroup(string name)
@@ -164,13 +178,31 @@ public class AdvertsPlugin : BasePlugin
         return Core.PlayerManager.GetAllValidPlayers().Where(p => !p.IsFakeClient);
     }
 
+    private string CurrentMap()
+    {
+        if (_currentMap == null)
+        {
+            try
+            {
+                var map = Core.Engine.GlobalVars.MapName.Value;
+                if (!string.IsNullOrEmpty(map))
+                    _currentMap = map;
+            }
+            catch (Exception e)
+            {
+                Core.Logger.LogWarning($"[Adverts] Could not read the current map: {e.Message}");
+            }
+        }
+        return _currentMap ?? "Unknown";
+    }
+
     private string Render(string template, string displayType)
     {
         var now = Clock.Now(_timeZone, DateTime.UtcNow);
         var values = new Dictionary<string, string>
         {
             ["server_name"] = Core.ConVar.Find<string>("hostname")?.Value ?? "Unknown",
-            ["map"] = _currentMap,
+            ["map"] = CurrentMap(),
             ["player_count"] = HumanPlayers().Count().ToString(),
             ["max_players"] = Core.PlayerManager.MaxPlayers.ToString(),
             ["time"] = Clock.Format(now, _config.TimeFormat, "HH:mm"),
@@ -204,10 +236,12 @@ public class AdvertsPlugin : BasePlugin
     [Command("adverts_reload", permission: "admins.adverts.reload")]
     public void OnReloadCommand(ICommandContext context)
     {
+        var loaded = LoadConfig();
         StopAllTimers();
-        LoadConfig();
         StartAllTimers();
-        context.Reply($"[Adverts] Configuration reloaded, {_timers.Count} group(s) running.");
+        context.Reply(loaded
+            ? $"[Adverts] Configuration reloaded, {_timers.Count} group(s) running."
+            : $"[Adverts] config.jsonc could not be read (see the server log), kept the previous config with {_timers.Count} group(s) running.");
     }
 
     [Command("adverts_list", permission: "admins.adverts.list")]

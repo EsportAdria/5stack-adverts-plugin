@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using SwiftlyS2.Adverts.Models;
 
 namespace SwiftlyS2.Adverts.Logic;
@@ -9,10 +10,30 @@ namespace SwiftlyS2.Adverts.Logic;
 public static class ConfigCheck
 {
     public const int MinIntervalSeconds = 5;
+    public const int MaxIntervalSeconds = 86400;
 
     public static readonly string[] DisplayTypes = { "chat", "center", "center_html", "alert" };
     public static readonly string[] Targets = { "all", "alive", "dead", "t", "ct" };
     public static readonly string[] Orders = { "sequential", "random" };
+
+    /// <summary>
+    /// Binds the section and warns about what the binder hides: it drops a
+    /// list element whose value it can't convert (a decimal or huge interval,
+    /// "Enabled": "yes") without an error, and it ignores the 1.x "Main" section.
+    /// </summary>
+    public static AdvertsConfig Bind(IConfiguration configuration, string section, List<string> warnings)
+    {
+        var config = configuration.GetSection(section).Get<AdvertsConfig>() ?? new AdvertsConfig();
+
+        var written = configuration.GetSection($"{section}:Groups").GetChildren().Count();
+        if (written > config.Groups.Count)
+            warnings.Add($"{written - config.Groups.Count} of {written} group(s) have a value of the wrong type (for example a decimal interval) and were skipped.");
+
+        if (configuration.GetSection("Main").Exists())
+            warnings.Add($"config.jsonc still has a 1.x \"Main\" section, which is ignored. Move the groups to \"{section}\" (see the README).");
+
+        return config;
+    }
 
     public static List<AdvertGroup> Normalize(AdvertsConfig config, List<string> warnings)
     {
@@ -65,6 +86,11 @@ public static class ConfigCheck
             {
                 warnings.Add($"Group '{name}' interval {interval}s is below {MinIntervalSeconds}s, using {MinIntervalSeconds}s.");
                 interval = MinIntervalSeconds;
+            }
+            else if (interval > MaxIntervalSeconds)
+            {
+                warnings.Add($"Group '{name}' interval {interval}s is above {MaxIntervalSeconds}s, using {MaxIntervalSeconds}s.");
+                interval = MaxIntervalSeconds;
             }
 
             groups.Add(new AdvertGroup

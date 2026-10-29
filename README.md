@@ -25,16 +25,18 @@
 The plugin is listed in a plugin registry as `ea-adverts` (entry: [`5stack/ea-adverts.json`](5stack/ea-adverts.json)).
 
 1. In the panel, open **Plugins**, find **EA Adverts** and install it.
-2. Edit the config on the plugin page. Settings stack the same way as other plugins: the plugin page, then the game mode, then the server's own config.
+2. Open its config on the plugin page, edit it and press **Save** at least once. Until then the panel writes no file and the plugin runs no groups (it logs a warning), even though the form shows the example groups.
 3. The panel writes `addons/swiftlys2/configs/plugins/EA_Adverts/config.jsonc` and restarts the server.
 
-The registry builds the version list from this repository's GitHub releases, so a new tag (`v2.0.1`) is all a release needs.
+Configs stack like other plugins: the plugin page, then the game mode, then the server. Lists are replaced, not merged, so a `Groups` list set on a game mode or a server replaces the whole list from the plugin page.
+
+The registry builds the version list from this repository's GitHub releases, so a new tag (`v2.0.1`) is enough for a code change. A change to `5stack/ea-adverts.json` (form or defaults) has to be copied into the registry repository as well.
 
 ## Install by hand
 
 1. Download `EA_Adverts-vX.Y.Z.zip` from [Releases](https://github.com/EsportAdria/5stack-adverts-plugin/releases).
 2. Extract it into `game/csgo/addons/swiftlys2/plugins/` (the zip holds an `EA_Adverts/` folder).
-3. Start the server once. The plugin writes an empty `addons/swiftlys2/configs/plugins/EA_Adverts/config.jsonc`; fill it in like the example below.
+3. Start the server once. The plugin writes `addons/swiftlys2/configs/plugins/EA_Adverts/config.jsonc` with the default settings and no groups; add groups like the example below.
 
 ## Configuration
 
@@ -48,9 +50,9 @@ The registry builds the version list from this repository's GitHub releases, so 
     "DateFormat": "dd.MM.yyyy",
     "Groups": [
       {
-        "Name": "rules",
+        "name": "rules",
         "Enabled": true,
-        "IntervalSeconds": 120,      // 5 or more
+        "IntervalSeconds": 120,      // whole seconds, 5 to 86400
         "Order": "sequential",       // "sequential" or "random"
         "DisplayType": "chat",       // "chat", "center", "center_html", "alert"
         "Target": "all",             // "all", "alive", "dead", "t", "ct"
@@ -61,7 +63,7 @@ The registry builds the version list from this repository's GitHub releases, so 
         ]
       },
       {
-        "Name": "community",
+        "name": "community",
         "IntervalSeconds": 300,
         "Order": "random",
         "SkipPermissions": ["vip.ads.skip"],
@@ -74,15 +76,17 @@ The registry builds the version list from this repository's GitHub releases, so 
 }
 ```
 
-The config is read at load, on every map change and on `sw_adverts_reload`.
+Keys are not case sensitive. The config is read at load, on every map change and on `sw_adverts_reload`. If the file can't be read (a JSON typo in a hand edit), the plugin logs an error and keeps the previous config.
 
 Problems are logged and skipped instead of stopping the plugin:
 
 - a group with no messages or an unknown display type is skipped;
+- a group with a value of the wrong type (a decimal interval, `"Enabled": "yes"`) is skipped;
 - an unknown target falls back to `all`, an unknown order to `sequential`;
-- an interval under 5 seconds is raised to 5;
+- an interval under 5 seconds is raised to 5, one over 86400 lowered to 86400;
 - a group without a name is called `group1`, `group2` and so on; a repeated name is skipped;
-- an unknown time zone (or a server image without tz data) falls back to the server clock.
+- an unknown time zone (or a server image without tz data) falls back to the server clock;
+- a config with no groups, or a leftover 1.x `Main` section, is logged.
 
 ### Placeholders
 
@@ -110,7 +114,8 @@ SwiftlyS2 adds the `sw_` prefix. A player needs the listed permission to run a c
 ## Upgrading from 1.x
 
 - The config section is now `Adverts` (was `Main`).
-- `Groups` is a list with a `Name` field instead of an object keyed by name, because the panel's form edits lists.
+- `Groups` is a list with a `name` field instead of an object keyed by name, because the panel's form edits lists.
+- The plugin does not convert the old file. It logs a warning while a `Main` section is still there.
 - Release zips hold an `EA_Adverts/` folder instead of loose files.
 
 ## Building

@@ -117,6 +117,19 @@ public class ConfigCheckTests
     }
 
     [Fact]
+    public void LowersLongIntervalsToTheMaximum()
+    {
+        var g = Group("x", "a");
+        g.IntervalSeconds = ConfigCheck.MaxIntervalSeconds + 1;
+        var warnings = new List<string>();
+
+        var result = Assert.Single(ConfigCheck.Normalize(new AdvertsConfig { Groups = { g } }, warnings));
+
+        Assert.Equal(ConfigCheck.MaxIntervalSeconds, result.IntervalSeconds);
+        Assert.Single(warnings);
+    }
+
+    [Fact]
     public void KeepsDisabledGroupsSoTheyCanBeToggled()
     {
         var g = Group("x", "a");
