@@ -2,8 +2,11 @@ name: Build and Release
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
+  pull_request:
 
 permissions:
   contents: write
@@ -21,21 +24,25 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - name: Test
+        run: dotnet test test/EA_Adverts.Tests.csproj
+
+      - name: Set version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: sed -i "s/__RELEASE_VERSION__/${GITHUB_REF_NAME#v}/" src/AdvertsPlugin.cs
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet publish EA_Adverts.csproj --configuration Release --output ./publish/EA_Adverts
 
-      - name: Publish
-        run: dotnet publish --configuration Release --no-build --output ./publish
-
+      # The 5stack registry installs the zip as a plugin folder, so it holds EA_Adverts/ at the root
       - name: Create release archive
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           cd publish
-          zip -r ../EA_Adverts-${{ github.ref_name }}.zip .
+          zip -r ../EA_Adverts-${{ github.ref_name }}.zip EA_Adverts
 
       - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: EA_Adverts-${{ github.ref_name }}.zip

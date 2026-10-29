@@ -4,5 +4,9 @@ public class AdvertsConfig
 {
     public string Prefix { get; set; } = "[Server]";
     public string PrefixColor { get; set; } = "red";
-    public Dictionary<string, AdvertGroup> Groups { get; set; } = new();
+    // IANA id such as "Europe/Zagreb"; empty uses the server's local time
+    public string TimeZone { get; set; } = "";
+    public string TimeFormat { get; set; } = "HH:mm";
+    public string DateFormat { get; set; } = "dd.MM.yyyy";
+    public List<AdvertGroup> Groups { get; set; } = new();
 }

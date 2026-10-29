@@ -5,3 +5,5 @@ build/
 *.user
 *.suo
 docs/
+publish/
+*.zip

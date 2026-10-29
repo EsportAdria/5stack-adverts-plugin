@@ -2,6 +2,7 @@ namespace SwiftlyS2.Adverts.Models;
 
 public class AdvertGroup
 {
+    public string Name { get; set; } = "";
     public bool Enabled { get; set; } = true;
     public int IntervalSeconds { get; set; } = 60;
     public string Order { get; set; } = "sequential";
