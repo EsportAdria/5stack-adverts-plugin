@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-11-02T22:37:45.329634Z",
+  "generated_at": "2026-11-02T23:03:04Z",
   "plugins": [
     {
       "slug": "5stack-inventory",
@@ -148,7 +148,7 @@
       "kind": "game",
       "name": "CSRoll",
       "author": "LCrew",
-      "description": "Chaos-mod style game modifiers. Players or admins roll gameplay-altering effects \u2014 jetpack, wallhack, speedhack, vampire, infinite ammo and ~40 more \u2014 scoped to a round, a run of rounds, or the whole match, server-wide or per player.",
+      "description": "Chaos-mod style game modifiers. Players or admins roll gameplay-altering effects — jetpack, wallhack, speedhack, vampire, infinite ammo and ~40 more — scoped to a round, a run of rounds, or the whole match, server-wide or per player.",
       "homepage": "https://github.com/LCrew/S2-CSRoll",
       "tags": [
         "fun",
@@ -1490,9 +1490,9 @@
       "slug": "retakes",
       "kind": "game",
       "name": "Retakes",
-      "author": "aga",
-      "description": "Bombsite retakes with auto-plant, instant defuse, per-map spawns and smoke scenarios, round-type weapon and utility allocation, queueing and an in-game spawn editor. Loadout preferences persist when the Cookies plugin is installed.",
-      "homepage": "https://github.com/a2Labs-cc/SwiftlyS2-Retakes",
+      "author": "EsportAdria",
+      "description": "Bombsite retakes with auto-plant, instant defuse, per-map spawns and smoke scenarios, round-type weapon and utility allocation, queueing and an in-game spawn editor. Loadout preferences persist when the Cookies plugin is installed. A bug-fix fork of aga's a2Labs-cc/SwiftlyS2-Retakes.",
+      "homepage": "https://github.com/EsportAdria/SwiftlyS2-Retakes",
       "tags": [
         "gamemode",
         "retakes",
@@ -1502,13 +1502,24 @@
       "hot_swappable": false,
       "variants": {
         "swiftlys2": {
-          "repo": "a2Labs-cc/SwiftlyS2-Retakes",
+          "repo": "EsportAdria/SwiftlyS2-Retakes",
           "asset": "Retakes-v*.zip",
           "layout": "plugin",
           "install_path": "addons/swiftlys2/plugins"
         }
       },
       "versions": [
+        {
+          "version": "1.5.2",
+          "runtime": "swiftlys2",
+          "url": "https://github.com/EsportAdria/SwiftlyS2-Retakes/releases/download/v1.5.2/Retakes-v1.5.2.zip",
+          "sha256": "ef0d46017a281d60ff484deae29961bbdd9ac65859d7ae82d81f9e28c41b1471",
+          "size": 312161,
+          "published_at": "2026-11-02T23:02:35Z",
+          "prerelease": false,
+          "layout": "plugin",
+          "install_path": "addons/swiftlys2/plugins"
+        },
         {
           "version": "1.5.1",
           "runtime": "swiftlys2",
