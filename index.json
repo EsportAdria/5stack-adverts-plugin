@@ -129,6 +129,17 @@
           "prerelease": false,
           "layout": "plugin",
           "install_path": "addons/swiftlys2/plugins"
+        },
+        {
+          "version": "1.0.9",
+          "runtime": "swiftlys2",
+          "url": "https://github.com/SwiftlyS2-Plugins/Cookies/releases/download/v1.0.9/Cookies.zip",
+          "sha256": "c7f31d521b195463f5aaf7b289bf8d99a392d1bf01557ee7b99be610d7acff57",
+          "size": 23486604,
+          "published_at": "2026-05-03T21:45:12Z",
+          "prerelease": false,
+          "layout": "plugin",
+          "install_path": "addons/swiftlys2/plugins"
         }
       ]
     },
