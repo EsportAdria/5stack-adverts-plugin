@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-11-02T23:03:04Z",
+  "generated_at": "2026-11-02T23:06:07Z",
   "plugins": [
     {
       "slug": "5stack-inventory",
@@ -126,17 +126,6 @@
           "sha256": "87a7578e1520c0ddf2e2b48f7945268df9e541c55eafa88c9c91554c73b291c2",
           "size": 18170990,
           "published_at": "2026-11-02T15:49:04Z",
-          "prerelease": false,
-          "layout": "plugin",
-          "install_path": "addons/swiftlys2/plugins"
-        },
-        {
-          "version": "1.0.9",
-          "runtime": "swiftlys2",
-          "url": "https://github.com/SwiftlyS2-Plugins/Cookies/releases/download/v1.0.9/Cookies.zip",
-          "sha256": "c7f31d521b195463f5aaf7b289bf8d99a392d1bf01557ee7b99be610d7acff57",
-          "size": 23486604,
-          "published_at": "2026-05-03T21:45:12Z",
           "prerelease": false,
           "layout": "plugin",
           "install_path": "addons/swiftlys2/plugins"
